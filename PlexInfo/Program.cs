@@ -44,6 +44,7 @@ namespace PlexInfo
             serviceCollection.AddTransient<ITestService, TestService>();
             serviceCollection.AddTransient<ISlackService, SlackService>();
             serviceCollection.AddTransient<IStatisticsService, StatisticsService>();
+            serviceCollection.AddTransient<IUtilities, Utilities>();
 
             // add app
             serviceCollection.AddTransient<App>();

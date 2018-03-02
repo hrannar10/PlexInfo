@@ -7,18 +7,19 @@ namespace PlexInfo
 {
     public class App
     {
-        private readonly ITestService _testService;
         private readonly ISlackService _slack;
+        private readonly IStatisticsService _statistics;
         private readonly ILogger<App> _logger;
         private readonly AppSettings _config;
 
-        public App(ITestService testService,
+        public App(
             ISlackService slack,
+            IStatisticsService statistics,
             IOptions<AppSettings> config,
             ILogger<App> logger)
         {
-            _testService = testService;
             _slack = slack;
+            _statistics = statistics;
             _logger = logger;
             _config = config.Value;
         }
@@ -26,8 +27,11 @@ namespace PlexInfo
         public void Run()
         {
             _logger.LogInformation($"This is a console application for {_config.Title}");
-            _testService.Run();
-            _slack.SendMessage("New test message");
+
+            _slack.SendMessage(_statistics.MostActiveUser());
+            //_slack.SendMessage(_statistics.MostViewedMovies());
+            //_slack.SendMessage(_statistics.MostViewedTvShows());
+            
             System.Console.ReadKey();
         }
     }
