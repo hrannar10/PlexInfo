@@ -1,45 +1,50 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using PlexInfo.Models;
 using PlexInfo.Services;
 
 namespace PlexInfo
 {
     public class Program
     {
-        private static IConfigurationRoot _configuration;
         public static void Main(string[] args)
         {
-            // Adding JSON file into IConfiguration.
-            var builder = new ConfigurationBuilder()
+            // create service collection
+            var serviceCollection = new ServiceCollection();
+            ConfigureServices(serviceCollection);
+
+            // create service provider
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+
+            // entry to run app
+            serviceProvider.GetService<App>().Run();
+        }
+
+        private static void ConfigureServices(IServiceCollection serviceCollection)
+        {
+            // add configured instance of logging
+            serviceCollection.AddSingleton(new LoggerFactory()
+                .AddConsole()
+                .AddDebug());
+
+            // add logging
+            serviceCollection.AddLogging();
+
+            // build configuration
+            var configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json");
-            _configuration = builder.Build();
+                .AddJsonFile("appsettings.json", false)
+                .Build();
+            serviceCollection.AddOptions();
+            serviceCollection.Configure<AppSettings>(configuration.GetSection("Configuration"));
 
-            // setup out DI
-            var serviceProvider = new ServiceCollection()
-                .AddSingleton<IUtilities, Utilities>()
-                .AddSingleton<ISlackClient, SlackClient>()
-                .BuildServiceProvider();
-            var utilities = serviceProvider.GetService<IUtilities>();
-            var bleh = serviceProvider.GetService<IConfiguration>();
-            var slackClient = serviceProvider.GetService<ISlackClient>();
+            // add services 
+            serviceCollection.AddTransient<ITestService, TestService>();
 
-            using (var db = new PlexInfoContext())
-            {
-                foreach (var section in db.session_history)
-                {
-                    Console.WriteLine(" - {0}", utilities.UnixTimestampToDateTime(section.started));
-                }
-            }
-
-
-
-            slackClient.Send("new message");
-
-            Console.WriteLine("Press enter to close...");
-            Console.ReadLine();
+            // add app
+            serviceCollection.AddTransient<App>();
         }
     }
 }
