@@ -30,7 +30,7 @@ namespace PlexInfo
 
             _slack.SendMessage(_statistics.MostActiveUser());
             _slack.SendMessage(_statistics.MostViewedMovies());
-            //_slack.SendMessage(_statistics.MostViewedTvShows());
+            _slack.SendMessage(_statistics.MostViewedTvShows());
             
             System.Console.ReadKey();
         }
