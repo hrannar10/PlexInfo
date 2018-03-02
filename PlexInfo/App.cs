@@ -29,7 +29,7 @@ namespace PlexInfo
             _logger.LogInformation($"This is a console application for {_config.Title}");
 
             _slack.SendMessage(_statistics.MostActiveUser());
-            //_slack.SendMessage(_statistics.MostViewedMovies());
+            _slack.SendMessage(_statistics.MostViewedMovies());
             //_slack.SendMessage(_statistics.MostViewedTvShows());
             
             System.Console.ReadKey();

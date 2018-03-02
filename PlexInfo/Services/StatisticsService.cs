@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Linq;
-using System.Transactions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using PlexInfo.Models;
-using Remotion.Linq.Clauses;
-using Remotion.Linq.Parsing.Structure.IntermediateModel;
 
 
 // https://stackoverflow.com/questions/21051612/entity-framework-join-3-tables
@@ -37,11 +34,33 @@ namespace PlexInfo.Services
         public string MostViewedTvShows()
         {
             throw new System.NotImplementedException();
+
         }
 
         public string MostViewedMovies()
         {
-            throw new System.NotImplementedException();
+            using (var db = new PlexInfoContext())
+            {
+                var mvts = (from sh in db.session_history
+                    join shmi in db.session_history_media_info on sh.rating_key equals shmi.rating_key
+                    join shm in db.session_history_metadata on sh.rating_key equals shm.rating_key
+                    where _utilities.UnixTimestampToDateTime(sh.started) > DateTime.Now.AddDays(-7)
+                    where shm.section_id == 3
+                    group shm by shm.title
+                    into g
+                    select new
+                    {
+                        title = g.Key,
+                        count = g.Count()
+                    });
+
+                var result = "Most viewed movies\n";
+                foreach (var movie in mvts.OrderByDescending(x => x.count))
+                {
+                    result = result + (movie.title + " views: " + movie.count + "\n");
+                }
+                return result;
+            }
         }
 
         public string MostActiveUser()
@@ -50,7 +69,7 @@ namespace PlexInfo.Services
             {
                 var mvm = (from sh in db.session_history
                     join u in db.users on sh.user_id equals u.user_id
-                    where _utilities.UnixTimestampToDateTime(sh.started) > DateTime.Now.AddDays(-2)
+                    where _utilities.UnixTimestampToDateTime(sh.started) > DateTime.Now.AddDays(-7)
                     group u by u.username
                     into g
                     select new
@@ -59,7 +78,10 @@ namespace PlexInfo.Services
                         count = g.Count()
                     });
 
-                return Enumerable.Aggregate(mvm.OrderByDescending(x => x.count), "Most active users:\n", (current, user) => current + (user.username + " views: " + user.count + "" + "\n"));
+                var result = "Most active users\n";
+                foreach (var user in mvm.OrderByDescending(x => x.count))
+                    result = result + (user.username + " views: " + user.count + "\n");
+                return result;
             }
         }
     }
